@@ -1,0 +1,384 @@
+---
+title: "GHYP"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    social: ['facebook', 'twitter', 'google-plus', 'linkedin']
+    theme: 
+      bootswatch: sandstone
+      version: 4
+      bg: "#fff" 
+      fg: "#063852"
+      navbar-bg: "#063852"
+      base_font: 
+        google: "Play"
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tibble)
+library(ghyp)
+library(plotly)
+source("functions/plot_ghyp_triangle.R")
+source("functions/xichi.R")
+```
+
+# Sidebar {.sidebar}
+
+```{r}
+shiny::selectInput(
+  inputId = "input_dist_type", 
+  label   = h4("Distribution"), 
+  choices = list(
+    "Normal"                 , 
+    "Student-t"              ,
+    "Variance-Gamma"         ,
+    "Normal-Inverse Gaussian",
+    "Hyperbolic"             ,
+    "Generalized Hyperbolic" 
+    ), 
+  selected = 1
+)
+
+h4("Simulation Inputs")
+
+shiny::sliderInput(
+  inputId = "input_n", 
+  label   = "Number of Draws", 
+  min = 100, 
+  max = 2000, 
+  step = 100, 
+  value = 100
+)
+
+shiny::sliderInput(
+  inputId = "input_mu", 
+  label   = "Mean", 
+  min = -5, 
+  max = 5, 
+  step = 0.25, 
+  value = 0
+)
+
+shiny::sliderInput(
+  inputId = "input_sigma", 
+  label   = "Sigma", 
+  min = 0.01, 
+  max = 5, 
+  step = 0.25, 
+  value = 2.5
+)
+
+# Student-t Params
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Student-t'", 
+  shiny::sliderInput(
+    inputId = "input_nu", 
+    label   = "Nu (Degrees os Freedom)", 
+    min     = 3, 
+    max     = 50, 
+    step    = 1, 
+    value   = 5
+  )
+)
+
+# NIG Params
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Normal-Inverse Gaussian'", 
+  shiny::sliderInput(
+    inputId = "input_gamma_nig", 
+    label   = "Gamma (Assimetry)", 
+    min     = -5, 
+    max     = 5, 
+    step    = 0.25, 
+    value   = 0
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Normal-Inverse Gaussian'", 
+  shiny::sliderInput(
+    inputId = "input_psi_nig", 
+    label   = "Psi", 
+    min     = 0.01, 
+    max     = 10, 
+    step    = 0.25, 
+    value   = 2
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Normal-Inverse Gaussian'", 
+  shiny::sliderInput(
+    inputId = "input_chi_nig", 
+    label   = "Chi", 
+    min     = 0.01, 
+    max     = 10, 
+    step    = 0.25, 
+    value   = 2
+  )
+)
+
+# VG Params
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Variance-Gamma'",
+  shiny::sliderInput(
+    inputId = "input_gamma_vg",
+    label   = "Gamma (Assimetry)",
+    min     = -10,
+    max     = 10,
+    step    = 1,
+    value   = 0
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Variance-Gamma'",
+  shiny::sliderInput(
+    inputId = "input_psi_vg",
+    label   = "Psi",
+    min     = 1,
+    max     = 10,
+    step    = 1,
+    value   = 2
+  )
+)
+
+# HYP Params
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_gamma_hyp", 
+    label   = "Gamma (Assimetry)", 
+    min     = -5, 
+    max     = 5, 
+    step    = 0.25, 
+    value   = 0
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_psi_hyp", 
+    label   = "Psi", 
+    min     = 1, 
+    max     = 20, 
+    step    = 1, 
+    value   = 2
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_chi_hyp", 
+    label   = "Chi", 
+    min     = 0.5, 
+    max     = 20, 
+    step    = 1, 
+    value   = 0.5
+  )
+)
+
+# GHY Params
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Generalized Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_gamma_ghyp", 
+    label   = "Gamma (Assimetry)", 
+    min     = -5, 
+    max     = 5, 
+    step    = 0.25, 
+    value   = 0
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Generalized Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_psi_ghyp", 
+    label   = "Psi", 
+    min     = 1, 
+    max     = 20, 
+    step    = 1, 
+    value   = 2
+  )
+)
+
+shiny::conditionalPanel(
+  condition = "input.input_dist_type == 'Generalized Hyperbolic'", 
+  shiny::sliderInput(
+    inputId = "input_chi_ghyp", 
+    label   = "Chi", 
+    min     = 0.5, 
+    max     = 20, 
+    step    = 1, 
+    value   = 0.5
+  )
+)
+```
+
+```{r}
+seq_ <- reactive({
+  seq(-15, 15, length.out = input$input_n)
+})
+```
+
+# The Distribution {data-icon="fa-infinity"}
+
+## Column {data-width="500"}
+
+```{r}
+# objects used latter for plotting
+
+# Distribution Specification
+dist_object_ <- reactive({
+  if (input$input_dist_type == 'Normal') {
+    gauss(mu = input$input_mu, sigma = input$input_sigma)
+  } else if (input$input_dist_type == 'Student-t') {
+    student.t(nu = input$input_nu, mu = input$input_mu, sigma = input$input_sigma)
+  } else if (input$input_dist_type == 'Variance-Gamma') {
+    VG(mu = input$input_mu, sigma = input$input_sigma, gamma = input$input_gamma_vg, 
+       psi = input$input_psi_vg)
+  } else if (input$input_dist_type == 'Normal-Inverse Gaussian') {
+    NIG(mu = input$input_mu, sigma = input$input_sigma, gamma = input$input_gamma_nig, 
+        chi = input$input_chi_nig, psi = input$input_psi_nig)
+  } else if (input$input_dist_type == "Hyperbolic") {
+    hyp(mu = input$input_mu, chi = input$input_chi_hyp, psi = input$input_psi_hyp,
+        sigma = input$input_sigma, gamma = input$input_gamma_hyp)
+  } else {
+    ghyp(chi = input$input_chi_ghyp, psi = input$input_psi_ghyp, mu = input$input_mu, 
+         sigma = input$input_sigma, gamma = input$input_gamma_ghyp)
+  }
+}) 
+
+# Random Number Generation
+random_ghyp_ <- reactive({
+  rghyp(n = length(seq_()), object = dist_object_())
+})
+
+# Distribution Estimation
+dist_fit_ <- reactive({
+  if (input$input_dist_type == 'Normal') {
+    fit.gaussuv(random_ghyp_())
+  } else if (input$input_dist_type == 'Student-t') {
+    fit.tuv(random_ghyp_(), silent = TRUE)
+  } else if (input$input_dist_type == 'Variance-Gamma') {
+    fit.VGuv(random_ghyp_(), silent = TRUE)
+  } else if (input$input_dist_type == 'Normal-Inverse Gaussian') {
+    fit.NIGuv(random_ghyp_(), silent = TRUE)
+  } else if (input$input_dist_type == "Hyperbolic") {
+    fit.hypuv(random_ghyp_(), silent = TRUE)
+  } else { 
+    fit.ghypuv(random_ghyp_(), silent = TRUE)
+  }
+})
+```
+
+### Probability Density Function (PDF)
+
+```{r}
+plot_pdf_ <- reactive({
+  tibble(
+    x = seq_(),
+    y = dghyp(x = seq_(), object = dist_object_())
+  )
+})
+
+renderPlotly({
+  plot_ly(data = plot_pdf_(), x = ~x, y = ~y, type = "scatter", mode = "lines", 
+          color = I("#063852")) |> 
+    layout(xaxis = list(title = "x"), yaxis = list(title = "Probability"))
+})
+```
+
+### Cumulative Density Function (CDF)
+
+```{r}
+plot_cdf_ <- reactive({
+  tibble(
+    x = seq_(),
+    y = pghyp(q = seq_(), object = dist_object_())
+  )
+})
+
+renderPlotly({
+  plot_ly(data = plot_cdf_(), x = ~x, y = ~y, type = "scatter", mode = "lines",
+          color = I("#063852")) |> 
+    layout(xaxis = list(title = "x"), yaxis = list(title = "Probability"))
+})
+```
+
+## Column {data-width="500"}
+
+### Quantile Distribution
+
+```{r}
+plot_quantile_ <- reactive({
+  tibble(
+    x = seq_(),
+    y = qghyp(p      = seq(0.001, 0.999, length.out = length(seq_())),
+              object = dist_object_())
+  ) 
+})
+
+renderPlotly({
+  plot_ly(data = plot_quantile_(), x = ~x, y = ~y, type = "scatter", mode = 'lines', 
+          color = I("#063852")) |> 
+    layout(xaxis = list(title = "x"), yaxis = list(title = "Probability"))
+})
+```
+
+### Numerical Estimation
+
+```{r}
+fit_table_ <- reactive({
+  
+  tibble(
+    Metric = c("Log-Likelihood", "AIC",
+               "Alpha-bar", "Chi", "Psi", "Mu", "Sigma", "Gamma",
+               "Number of Iterations", "Convergence"),
+    Value = c(
+      scales::number(dist_fit_()@llh, big.mark = ",", decimal.mark = "."),
+      scales::number(dist_fit_()@aic, big.mark = ",", decimal.mark = "."),
+      round(dist_fit_()@alpha.bar, 4),
+      round(dist_fit_()@chi, 4), 
+      round(dist_fit_()@psi, 4), 
+      round(dist_fit_()@mu, 4),
+      round(dist_fit_()@sigma, 4), 
+      round(dist_fit_()@gamma, 4),
+      dist_fit_()@n.iter,
+      as.logical(dist_fit_()@converged))
+  )
+})
+renderTable(fit_table_())
+```
+
+# About {data-icon="fa-info-circle"}
+
+During the last 30 years, investment strategies that focus primarily on capital preservation have gained popularity in the financial industry. For those strategies, its crucial if the central moments of the distribution are estimated correctly, otherwise tail events may be amiss.
+
+In practice, modelling the randomness of the market is a daunting task. Stock returns, a commom *proxy* for invariance, are often not i.i.d., cluster in panic and show high levels of asymmetry and kurtosis.
+
+These problems can be *partially* addressed with the [Generalised hyperbolic distribution (GHYP)](https://en.wikipedia.org/wiki/Generalised_hyperbolic_distribution){style="color: #D9B44A"}.
+
+By construction, the GHYP generalizes several distributions already used in finance, its infinitely divisible and not necessarily symmetric.
+
+Hopefully, this `shiny` app will boost your intuition on this powerful distribution.
+
+```{r}
+br()
+hr()
+br()
+```
+
+If you have any suggestion on how this app could be improved, please, let me know [here](https://github.com/Reckziegel/SimGHYP/issues){style="color: #D9B44A"}.
+
+Best, <br>
+Bernardo Reckziegel <br>
+**Github**: [Reckziegel](https://github.com/Reckziegel){style="color: #D9B44A"} <br>
+**Linkedin**: [bernardoreckziegel](https://www.linkedin.com/in/bernardoreckziegel/){style="color: #D9B44A"}
