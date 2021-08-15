@@ -1,19 +1,26 @@
 ---
 title: "GHYP"
-output: 
+output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-    social: ['facebook', 'twitter', 'google-plus', 'linkedin']
-    theme: 
+    source_code: https://github.com/Reckziegel/SimGHYP
+    social:
+    - facebook
+    - twitter
+    - google-plus
+    - linkedin
+    theme:
       bootswatch: sandstone
       version: 4
-      bg: "#fff" 
-      fg: "#063852"
-      navbar-bg: "#063852"
-      base_font: 
-        google: "Play"
+      bg: '#fff'
+      fg: '#063852'
+      navbar-bg: '#063852'
+      base_font:
+        google: Play
 runtime: shiny
+resource_files:
+- images/GHYP_dashboard-03.png
 ---
 
 ```{r setup, include=FALSE}
@@ -22,8 +29,8 @@ library(shiny)
 library(tibble)
 library(ghyp)
 library(plotly)
-source("functions/plot_ghyp_triangle.R")
-source("functions/xichi.R")
+#source("functions/plot_ghyp_triangle.R")
+#source("functions/xichi.R")
 ```
 
 # Sidebar {.sidebar}
@@ -329,7 +336,7 @@ plot_quantile_ <- reactive({
 renderPlotly({
   plot_ly(data = plot_quantile_(), x = ~x, y = ~y, type = "scatter", mode = 'lines', 
           color = I("#063852")) |> 
-    layout(xaxis = list(title = "x"), yaxis = list(title = "Probability"))
+    layout(xaxis = list(title = "x"), yaxis = list(title = ""))
 })
 ```
 
@@ -339,20 +346,20 @@ renderPlotly({
 fit_table_ <- reactive({
   
   tibble(
-    Metric = c("Log-Likelihood", "AIC",
-               "Alpha-bar", "Chi", "Psi", "Mu", "Sigma", "Gamma",
-               "Number of Iterations", "Convergence"),
+    Metric = c("Convergence", "Number of Iterations", "Log-Likelihood", "AIC",
+               "Mu", "Sigma", "Gamma", "Alpha-bar", "Chi", "Psi"),
     Value = c(
+      as.logical(dist_fit_()@converged), 
+      dist_fit_()@n.iter,
       scales::number(dist_fit_()@llh, big.mark = ",", decimal.mark = "."),
       scales::number(dist_fit_()@aic, big.mark = ",", decimal.mark = "."),
-      round(dist_fit_()@alpha.bar, 4),
-      round(dist_fit_()@chi, 4), 
-      round(dist_fit_()@psi, 4), 
       round(dist_fit_()@mu, 4),
       round(dist_fit_()@sigma, 4), 
       round(dist_fit_()@gamma, 4),
-      dist_fit_()@n.iter,
-      as.logical(dist_fit_()@converged))
+      round(dist_fit_()@alpha.bar, 4),
+      round(dist_fit_()@chi, 4), 
+      round(dist_fit_()@psi, 4)
+    )
   )
 })
 renderTable(fit_table_())
@@ -360,25 +367,29 @@ renderTable(fit_table_())
 
 # About {data-icon="fa-info-circle"}
 
-During the last 30 years, investment strategies that focus primarily on capital preservation have gained popularity in the financial industry. For those strategies, its crucial if the central moments of the distribution are estimated correctly, otherwise tail events may be amiss.
+```{r}
+h4("Why this app?")
+```
 
-In practice, modelling the randomness of the market is a daunting task. Stock returns, a commom *proxy* for invariance, are often not i.i.d., cluster in panic and show high levels of asymmetry and kurtosis.
+The objective of this `shiny` app is to demonstrate the flexibility of the [Generalised Hyperbolic Distribution (GHYP)](https://en.wikipedia.org/wiki/Generalised_hyperbolic_distribution){style="color: #D9B44A"}.
 
-These problems can be *partially* addressed with the [Generalised hyperbolic distribution (GHYP)](https://en.wikipedia.org/wiki/Generalised_hyperbolic_distribution){style="color: #D9B44A"}.
+By construction, the Hyperbolic PDF generalizes several distributions already used in finance, making it a suitable candidate to model real world events.
 
-By construction, the GHYP generalizes several distributions already used in finance, its infinitely divisible and not necessarily symmetric.
-
-Hopefully, this `shiny` app will boost your intuition on this powerful distribution.
+This is specially true for investment strategies in which the primary focus is on capital preservation. In this case, it's crucial if the central moments of the distribution can be estimated *correctly*, otherwise tail events may be amiss.
 
 ```{r}
-br()
+h4("Package Dependencies")
+```
+
+For the numerical computations in this application the [ghyp](https://cran.r-project.org/web/packages/ghyp/index.html){style="color: #D9B44A"} package is used. The graphics is constructed with [plotly](https://plotly.com/r/){style="color: #D9B44A"} and the UI relies on `shiny` and `flexdashboard` packages.
+
+```{r}
 hr()
 br()
 ```
 
-If you have any suggestion on how this app could be improved, please, let me know [here](https://github.com/Reckziegel/SimGHYP/issues){style="color: #D9B44A"}.
+If you have any suggestion on how this app could be improved, please, [let me know](https://github.com/Reckziegel/SimGHYP/issues){style="color: #D9B44A"}.
 
-Best, <br>
-Bernardo Reckziegel <br>
-**Github**: [Reckziegel](https://github.com/Reckziegel){style="color: #D9B44A"} <br>
-**Linkedin**: [bernardoreckziegel](https://www.linkedin.com/in/bernardoreckziegel/){style="color: #D9B44A"}
+You can also __share__ this application by clicking on the icons that appear on the top right. To see the full code on github go to source code. 
+
+Best, <br> Bernardo Reckziegel <br> `r Sys.Date()` <br> **Github**: [Reckziegel](https://github.com/Reckziegel){style="color: #D9B44A"} <br> **Linkedin**: [bernardoreckziegel](https://www.linkedin.com/in/bernardoreckziegel/){style="color: #D9B44A"}
